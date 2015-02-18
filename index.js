@@ -113,6 +113,7 @@ app.post(
       req.body.workspace,
       function (err, instance) {
         if (err) return next(err);
+        console.log(arguments)
 
         res.json(instance);
       });

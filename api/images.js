@@ -65,7 +65,8 @@ function listInstances (filter, callback) {
               displayName: doc.displayName,
               image: doc.image,
               slug: doc.slug,
-              status: 'stopped'
+              status: 'stopped',
+              container: doc.container
             });
           } else {
             instances.push({
@@ -79,7 +80,7 @@ function listInstances (filter, callback) {
             });
           }
 
-          callback ();
+          callback();
         });
       } catch (e) {
         instances.push({
@@ -89,6 +90,8 @@ function listInstances (filter, callback) {
           slug: doc.slug,
           status: 'stopped'
         });
+
+        callback();
       }
     }, function (err) {
       if (err) return callback (err);
@@ -143,52 +146,53 @@ ImagesAPI.prototype.createInstance = function (imageId, displayName, workspaceNa
     }
 
     if (!image) return callback (new Error('Invalid image ID'));
+    var createdInstance;
 
     async.series([function (callback) {
       docker.pull(image.name, function (err, stream) {
+	console.error('Pull err:', err);
         if (err) return callback (err);
 
-        stream.on('end', function () {
-          callback();
-        });
+        if (stream.ended) return callback ();
 
-        stream.on('error', function (error) {
-          callback(error);
-        });
+        stream.resume();
+        stream.on('end', callback);
       });
     }, function (callback) {
-      mkdirp(workspacePath, function (err) {
+      mkdirp(workspacePath, callback);
+    }, function (callback) {
+      docker.createContainer({
+        Image: image.name,
+        "Volumes": {
+          "/workspace": {}
+        }
+      }, function (err, container) {
         if (err) return callback (err);
- 
-        docker.createContainer({
-          Image: image.name,
-          "Volumes": {
-            "/workspace": {}
-          }
-        }, function (err, container) {
+
+        container.start({
+          "Binds": [workspacePath + ":/workspace"]
+        }, function (err) {
           if (err) return callback (err);
- 
-          container.start({
-            "Binds": [workspacePath + ":/workspace"]
-          }, function (err) {
-            if (err) return callback (err);
 
-            var instance = {
-              container: container.id,
-              displayName: displayName,
-              workspace: workspaceName,
-              imageId: imageId,
-              imageName: image.name,
-              slug: require('slugify2')(image.name + '_' + workspaceName)
-            };
+          var instance = {
+            container: container.id,
+            displayName: displayName,
+            workspace: workspaceName,
+            imageId: imageId,
+            imageName: image.name,
+            slug: require('slugify2')(image.name + '_' + workspaceName)
+          };
 
-            collection.insert(instance, function (err) {
-              callback(err, instance);
-            });
+          collection.insert(instance, function (err) {
+            createdInstance = instance;
+            callback(err);
+          });
         });
       });
+    }], function (err) {
+      console.log(err, createdInstance);
+      callback(err, createdInstance);
     });
-    }], callback);
   });
 };
 
