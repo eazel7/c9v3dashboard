@@ -75,7 +75,8 @@ function listInstances (filter, callback) {
           workspace: doc.workspace,
           container: doc.container,
           displayName: doc.displayName,
-          image: doc.image
+          image: doc.image,
+          slug: doc.slug
         });
 
         callback ();
@@ -98,6 +99,16 @@ ImagesAPI.prototype.listInstancesForImage = function (imageId, callback) {
   }, callback]);
 };
 
+ImagesAPI.prototype.getInstanceForSlug = function (slug, callback) {
+  listInstances.apply(this, [{
+    slug: slug
+  }, function (err, instances) {
+    if (err) return callback (err);
+
+    return callback (null, instances[0]);
+  }]);
+};
+
 ImagesAPI.prototype.createInstance = function (imageId, displayName, workspaceName, callback) {
   var docker = this.docker,
       bus = this.bus,
@@ -108,7 +119,7 @@ ImagesAPI.prototype.createInstance = function (imageId, displayName, workspaceNa
   if (!imageId) return callback (new Error('No image id given'));
   if (!workspaceName) return callback (new Error('No workspace name given'));
 
-  if (!/^[a-z][a-z0-9_-]{3,16}$/.exec(workspaceName)) return callback (new Error('Invalid workspace name'));
+//  if (!/^[a-z][a-z0-9_-]{3,16}$/.exec(workspaceName)) return callback (new Error('Invalid workspace name'));
 
   var workspacePath = path.join(this.configApi.dataDir, 'workspaces', workspaceName);
 
@@ -145,7 +156,8 @@ ImagesAPI.prototype.createInstance = function (imageId, displayName, workspaceNa
             displayName: displayName,
             workspace: workspaceName,
             imageId: imageId,
-            imageName: image.name
+            imageName: image.name,
+            slug: require('slugify2')(image.name + '_' + workspaceName)
           };
 
           collection.insert(instance, function (err) {

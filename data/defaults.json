@@ -3,6 +3,8 @@
     "socketPath": "/var/run/docker.sock"
   },
   "usersSource": "local",
+  "useDns": true,
+  "dnsSuffix": ".c9dev",
   "images": [{
     "id": "c9v3",
     "displayName": "Cloud9 v3.0",

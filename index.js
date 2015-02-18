@@ -131,6 +131,58 @@ app.use(express.static(require('path').join(__dirname, 'web')));
 var morgan = require('morgan');
 app.use(morgan('combined'))
 
+var dnsServer;
+
+function checkDns(config) {
+  if (config.useDns && !dnsServer) {
+    var dns = require('native-dns');
+ 
+    dnsServer = dns.createServer();
+
+    dnsServer.on('request', function (request, response) {
+      async.each(request.question, function (question, callback) {
+        if (question.name.lastIndexOf(config.dnsSuffix) == question.name.length - config.dnsSuffix.length) {
+          api.images.getInstanceForSlug(question.name.slice(0, question.name.length - config.dnsSuffix.length), function (err, instance) {
+            if (!err && instance) {
+       	      response.answer.push(dns.A({
+                name: instance.slug + config.dnsSuffix,
+                address: instance.ip,
+                ttl: 600
+              }));
+            }
+
+            callback();
+          });
+        } else {
+          callback();
+        }
+      }, function (err) {
+        response.send();
+      });      
+    });
+
+    dnsServer.on('error', function (err, buff, req, res) {
+      console.log(err.stack);
+    });
+
+    console.log('serving DNS');
+    dnsServer.serve(53, process.env.IP);
+  } else if (dnsServer && !config.useDns) {
+    dnsServer.close();
+    dnsServer = null;
+  }
+};
+
 app.listen(process.env.PORT, function() {
   console.log('Listening on http://localhost:' + String(process.env.PORT));
+
+  api.bus.on('config-changed', function (newConfig) {
+    checkDns(newConfig);
+  });
+
+  api.config.getConfig(function (err, config) {
+    if (err) return;
+
+    checkDns(config);
+  });
 });
