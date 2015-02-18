@@ -1,0 +1,15 @@
+<table class="table">
+  <thead>
+    <tr>
+      <th>Display name</th>
+      <th>Workspace</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr ng-repeat="i in instances.instances">
+      <td>{{i.displayName}}</td>
+      <td>{{i.workspace}}</td>
+      <td><a ng-href="http://{{i.ip}}:8181">Open C9</a></td>
+    </tr>
+  </tbody>
+</table>

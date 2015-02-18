@@ -1,0 +1,9 @@
+.code {
+  font-family: Monospace;
+  font-size: 0.9em;
+  display: inline-block;
+  padding: 0.1em;
+  background-color: #555;
+  border: 1px solid #aaa;
+  color: #fee;
+}

@@ -1,0 +1,27 @@
+<table class="table">
+  <thead>
+    <tr>
+      <th>Alias</th>
+      <th>Display name</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr ng-repeat="u in users.users | orderBy:'username'">
+      <td>
+        {{u.username}}
+      </td>
+      <td>
+        {{u.displayName}}
+      </td>
+    </tr>
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="2" class="text-center">
+        <button type="button" class="btn btn-primary" ng-click="users.createNew()">
+          <i class="glyphicon glyphicon-plus"></i> New
+        </button>
+      </td>
+    </tr>
+  </tfoot>
+</table>

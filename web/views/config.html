@@ -1,0 +1,53 @@
+<form role="form" class="form-horizontal" ng-submit="config.save()">
+  <div class="alert alert-info" ng-if="!config.isConfigured">
+    <p class="text-center">
+      <strong>Not configured</strong>
+    </p>
+    <p class="text-center">
+      <button ng-click="config.installDefaults()" type="button" class="btn btn-primary btn-lg">Install defaults</button>
+    </p>
+  </div>
+
+  <div class="alert alert-danger" ng-if="config.error">
+    <p class="text-center">
+      <strong>Error</strong>
+    </p>
+    <p class="text-center">
+      {{config.error}}
+    </p>
+  </div>
+
+  <div class="form-group" ng-if="config.isConfigured">
+    <label class="control-label">Users source</label>
+    <select class="form-control" ng-model="config.latest.usersSource">
+      <option value="local">Local</option>
+      <option value="ldap">LDAP</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <p class="text-center">
+      <button class="btn btn-primary" type="submit"><i class="glyphicon glyphicon-save"></i> Save</button>
+    </p>
+  </div>
+  <div class="text-center alert alert-info" ng-if="config.saved">
+    <p>
+      <strong>Config has been saved</strong>
+    </p>
+    <p>
+      <button ng-click="config.saved = false" type="button" class="btn btn-link">Ok, thanks</button>
+    </p>
+  </div>
+</form>
+
+
+<div bs-collapse ng-model="advancedPanel" ng-init="advancedPanel = -1" ng-if="config.isConfigured">
+  <h4 class="text-center">
+    <a bs-collapse-toggle style="cursor: pointer">
+      Advanced <i class="glyphicon" ng-class="{'glyphicon-chevron-down': advancedPanel === -1, 'glyphicon-chevron-up': advancedPanel === 0}"></i>
+    </a>
+  </h4>
+  <div class="text-center" bs-collapse-target>
+    <button ng-click="config.installDefaults()" type="button" class="btn btn-danger">Restore defaults</button>
+  </div>
+</div>

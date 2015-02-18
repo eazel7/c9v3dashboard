@@ -1,0 +1,19 @@
+<form name="newInstanceForm" novalidate role="form" class="form-horizontal">
+  <div class="form-group">
+    <label class="control-label col-sm-4">Display name:</label>
+    <div class="col-sm-8">
+      <input name="displayName" type="text" class="form-control" ng-model="newInstance.displayName" />
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="control-label col-sm-4">Workspace name:</label>
+    <div class="col-sm-8">
+      <input required name="workspaceName" type="text" class="form-control" ng-model="newInstance.workspace" />
+    </div>
+  </div>
+</form>
+<div class="modal-footer">
+  <button class="btn btn-primary" ng-disabled="newInstanceForm.$invalid" ng-click="confirm()">
+    <i class="glyphicon glyphicon-ok"></i> Create
+  </button>
+</div>

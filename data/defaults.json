@@ -1,0 +1,11 @@
+{
+  "docker": {
+    "socketPath": "/var/run/docker.sock"
+  },
+  "usersSource": "local",
+  "images": [{
+    "id": "c9v3",
+    "displayName": "Cloud9 v3.0",
+    "name": "eazel7/c9"
+  }]
+}

@@ -1,0 +1,24 @@
+<div class="text-center alert alert-danger" ng-if="images.error">
+  <strong>Error</strong>
+  <p>{{images.error}}</p>
+</div>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Image</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr ng-repeat="i in images.images">
+      <td>
+        <a href="#/images/{{i.id}}/instances">{{i.name}}</a></td>
+      <td class="text-right">
+        <button type="button" class="btn btn-sm btn-default" ng-click="images.createInstance(i)">
+          <i class="glyphicon glyphicon-plus"></i>
+        </button>
+      </td>
+    </tr>
+  </tbody>
+</table>
