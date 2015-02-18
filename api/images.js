@@ -17,7 +17,7 @@ function ImagesAPI(configApi, bus) {
   this.configApi = configApi;
   this.bus = bus;
   this.collection = new DataStore({
-    filename: path.join(configApi.dataDir, 'images.db'),
+    filename: path.join(configApi.dataDir, 'instances.db'),
     autoload: true
   });
 
@@ -29,16 +29,6 @@ function ImagesAPI(configApi, bus) {
     self.latestConfig = newConfig;
 
     self.docker = new Docker(newConfig.docker);
-
-    // self.attachedAt = Date().now();
-    // self.docker.getEvents((function (err, data) {
-    //   if (this.docker !== self.docker) return;
-    //
-    //   console.log(err, data);
-    // }).bind({
-    //   docker: self.docker,
-    //   imagesApi: images
-    // }));
   };
 
   configApi.getConfig(function (err, newConfig) {
@@ -65,22 +55,41 @@ function listInstances (filter, callback) {
     var instances = [];
 
     async.each(docs, function (doc, callback) {
-      docker
-      .getContainer(doc.container)
-      .inspect(function (err, info) {
-        if (err) return callback (err);
+      try {
+        docker
+        .getContainer(doc.container)
+        .inspect(function (err, info) {
+          if (err) {
+            instances.push({
+              workspace: doc.workspace,
+              displayName: doc.displayName,
+              image: doc.image,
+              slug: doc.slug,
+              status: 'stopped'
+            });
+          } else {
+            instances.push({
+              ip: info.NetworkSettings.IPAddress,
+              container: doc.container,
+              workspace: doc.workspace,
+              displayName: doc.displayName,
+              image: doc.image,
+              slug: doc.slug,
+              status: 'running'
+            });
+          }
 
+          callback ();
+        });
+      } catch (e) {
         instances.push({
-          ip: info.NetworkSettings.IPAddress,
           workspace: doc.workspace,
-          container: doc.container,
           displayName: doc.displayName,
           image: doc.image,
-          slug: doc.slug
+          slug: doc.slug,
+          status: 'stopped'
         });
-
-        callback ();
-      });
+      }
     }, function (err) {
       if (err) return callback (err);
 
@@ -135,42 +144,56 @@ ImagesAPI.prototype.createInstance = function (imageId, displayName, workspaceNa
 
     if (!image) return callback (new Error('Invalid image ID'));
 
-    mkdirp(workspacePath, function (err) {
-      if (err) return callback (err);
-
-      docker.createContainer({
-        Image: image.name,
-        "Volumes": {
-          "/workspace": {}
-        }
-      }, function (err, container) {
+    async.series([function (callback) {
+      docker.pull(image.name, function (err, stream) {
         if (err) return callback (err);
 
-        container.start({
-          "Binds": [workspacePath + ":/workspace"]
-        }, function (err) {
+        stream.on('end', function () {
+          callback();
+        });
+
+        stream.on('error', function (error) {
+          callback(error);
+        });
+      });
+    }, function (callback) {
+      mkdirp(workspacePath, function (err) {
+        if (err) return callback (err);
+ 
+        docker.createContainer({
+          Image: image.name,
+          "Volumes": {
+            "/workspace": {}
+          }
+        }, function (err, container) {
           if (err) return callback (err);
+ 
+          container.start({
+            "Binds": [workspacePath + ":/workspace"]
+          }, function (err) {
+            if (err) return callback (err);
 
-          var instance = {
-            container: container.id,
-            displayName: displayName,
-            workspace: workspaceName,
-            imageId: imageId,
-            imageName: image.name,
-            slug: require('slugify2')(image.name + '_' + workspaceName)
-          };
+            var instance = {
+              container: container.id,
+              displayName: displayName,
+              workspace: workspaceName,
+              imageId: imageId,
+              imageName: image.name,
+              slug: require('slugify2')(image.name + '_' + workspaceName)
+            };
 
-          collection.insert(instance, function (err) {
-            callback(err, instance);
-          });
+            collection.insert(instance, function (err) {
+              callback(err, instance);
+            });
         });
       });
     });
+    }], callback);
   });
 };
 
 ImagesAPI.prototype.destroyInstance = function (instanceId, callback) {
-
+  
 };
 
 module.exports = ImagesAPI;
